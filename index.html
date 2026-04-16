@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>صحتي الإماراتية | AI Food Scanner</title>
+    <!-- Bootstrap 5 RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #00897b; /* Teal Green */
+            --accent-color: #fbc02d; /* UAE Gold */
+            --bg-light: #f8f9fa;
+            --text-light: #212529;
+            --card-light: #ffffff;
+            
+            /* Dark Mode Variables */
+            --bg-dark: #121212;
+            --text-dark: #e0e0e0;
+            --card-dark: #1e1e1e;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+            padding-bottom: 80px; /* Space for bottom nav if needed */
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: var(--bg-dark);
+            color: var(--text-dark);
+        }
+        body.dark-mode .card {
+            background-color: var(--card-dark);
+            color: var(--text-dark);
+            border-color: #333;
+        }
+        body.dark-mode .navbar {
+            background-color: var(--card-dark) !important;
+            border-bottom: 1px solid #333;
+        }
+        body.dark-mode .list-group-item {
+            background-color: var(--card-dark);
+            color: var(--text-dark);
+            border-color: #333;
+        }
+
+        /* Header & Nav */
+        .navbar-brand {
+            font-weight: bold;
+            color: var(--primary-color) !important;
+        }
+        
+        /* Camera Section */
+        .camera-wrapper {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            background: #000;
+            aspect-ratio: 3/4;
+            max-height: 400px;
+        }
+        video, img.preview-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 3px;
+            background: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-color);
+            top: 0;
+            display: none;
+            animation: scanAnim 2s infinite linear;
+            z-index: 10;
+        }
+        @keyframes scanAnim {
+            0% { top: 0; }
+            50% { top: 100%; }
+            100% { top: 0; }
+        }
+
+        /* Cards & Sections */
+        .feature-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .feature-card:active {
+            transform: scale(0.98);
+        }
+
+        /* Challenge Progress */
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+        }
+        .challenge-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            margin-left: 10px;
+        }
+
+        /* Recipe Images */
+        .recipe-img {
+            height: 120px;
+            object-fit: cover;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        /* Floating Action Button for Scan */
+        .fab-scan {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary-color);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 15px rgba(0,137,123,0.4);
+            z-index: 1000;
+            cursor: pointer;
+            border: 3px solid white;
+        }
+        body.dark-mode .fab-scan {
+            border-color: #333;
+        }
+
+        /* Tabs Navigation */
+        .nav-pills .nav-link.active {
+            background-color: var(--primary-color);
+        }
+        .nav-pills .nav-link {
+            color: var(--text-light);
+        }
+        body.dark-mode .nav-pills .nav-link {
+            color: var(--text-dark);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-seedling"></i> صحتي الإماراتية</a>
+            <button class="btn btn-outline-secondary btn-sm rounded-circle" id="theme-toggle">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <div class="container mt-3" id="main-container">
+        
+        <!-- SECTION: HOME / DASHBOARD -->
+        <div id="home-section">
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="fas fa-info-circle ms-2"></i>
+                <div>هدفنا: مجتمع إماراتي صحي وخالي من الأمراض المزمنة.</div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row g-2 mb-4">
+                <div class="col-6">
+                    <div class="card feature-card p-3 text-center">
+                        <h3 class="fw-bold text-primary mb-0">1,250</h3>
+                        <small>سعرة اليوم</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card feature-card p-3 text-center">
+                        <h3 class="fw-bold text-warning mb-0">4</h3>
+                        <small>كؤوس ماء</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Challenges -->
+            <h5 class="mb-3 fw-bold"><i class="fas fa-trophy text-warning"></i> تحديات الأسبوع</h5>
+            <div class="card feature-card mb-4">
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-carrot challenge-icon"></i>
+                            <div class="flex-grow-1 ms-2">
+                                <h6 class="mb-0">تناول 3 خضروات يومياً</h6>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-success" style="width: 70%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill">70%</span>
+                        </li>
+                        <li class="list-group-item d-flex align-items-center">
+                            <i class="fas fa-walking challenge-icon"></i>
+                            <div class="flex-grow-1 ms-2">
+                                <h6 class="mb-0">مشي 10,000 خطوة</h6>
+                                <div class="progress mt-2">
+                                    <div class="progress-bar bg-warning" style="width: 40%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill">40%</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Healthy Recipes -->
+            <h5 class="mb-3 fw-bold"><i class="fas fa-utensils text-danger"></i> وصفات صحية مقترحة</h5>
+            <div class="row g-3">
+                <!-- Recipe 1 -->
+                <div class="col-6">
+                    <div class="card feature-card h-100">
+                        <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400" class="recipe-img card-img-top" alt="Salad">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">سلطة الكينوا الإمارتية</h6>
+                            <small class="text-muted">350 سعرة • سهلة</small>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recipe 2 -->
+                <div class="col-6">
+                    <div class="card feature-card h-100">
+                        <img src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400" class="recipe-img card-img-top" alt="Bowl">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">طبق السمك المشوي</h6>
+                            <small class="text-muted">420 سعرة • متوسط</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <br><br>
+            <div class="text-center text-muted small">
+                اضغط على الزر الأخضر بالأسفل لمسح طعامك
+            </div>
+        </div>
+
+        <!-- SECTION: SCANNER (Hidden by default) -->
+        <div id="scanner-section" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0">ماسح الطعام الذكي</h5>
+                <button class="btn btn-sm btn-outline-danger" onclick="closeScanner()">خروج</button>
+            </div>
+
+            <div class="camera-wrapper mb-3">
+                <video id="video" autoplay playsinline></video>
+                <canvas id="canvas" style="display:none;"></canvas>
+                <img id="photo-preview" class="preview-img" style="display:none;" alt="Preview">
+                <div id="scan-overlay" class="scan-line"></div>
+                
+                <!-- Overlay Text -->
+                <div id="scanning-text" class="position-absolute top-50 start-50 translate-middle text-white fw-bold bg-dark bg-opacity-50 px-3 py-1 rounded" style="display:none;">
+                    جاري تحليل المكونات...
+                </div>
+            </div>
+
+            <div class="text-center">
+                <button id="capture-btn" class="btn btn-lg btn-success rounded-pill px-5 shadow">
+                    <i class="fas fa-camera"></i> التقط
+                </button>
+                <button id="retake-btn" class="btn btn-lg btn-outline-secondary rounded-pill px-5" style="display:none;">
+                    <i class="fas fa-redo"></i> إعادة
+                </button>
+            </div>
+
+            <!-- Analysis Result Card -->
+            <div id="analysis-result" class="card feature-card mt-3 bg-opacity-10" style="display:none;">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="card-title fw-bold text-primary mb-0" id="food-name">--</h5>
+                        <span class="badge bg-success" id="health-badge">صحي</span>
+                    </div>
+                    
+                    <div class="row text-center mb-3">
+                        <div class="col-4 border-start">
+                            <h4 class="fw-bold mb-0 text-warning" id="cal-val">0</h4>
+                            <small>سعرة</small>
+                        </div>
+                        <div class="col-4 border-start">
+                            <h4 class="fw-bold mb-0 text-info" id="prot-val">0g</h4>
+                            <small>بروتين</small>
+                        </div>
+                        <div class="col-4">
+                            <h4 class="fw-bold mb-0 text-danger" id="fat-val">0g</h4>
+                            <small>دهون</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-light border p-2 small">
+                        <i class="fas fa-robot text-primary"></i> 
+                        <strong>تحليل الذكاء الاصطناعي:</strong> <span id="ai-comment">تم اكتشاف وجبة متوازنة، لكن انتبه للكمية.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab-scan" onclick="openScanner()">
+        <i class="fas fa-qrcode"></i>
+    </div>
+
+    <script>
+        // --- Theme Logic ---
+        const themeToggle = document.getElementById('theme-toggle');
+        const body = document.body;
+        const icon = themeToggle.querySelector('i');
+
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            if(body.classList.contains('dark-mode')){
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            } else {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            }
+        });
+
+        // --- Navigation Logic ---
+        const homeSection = document.getElementById('home-section');
+        const scannerSection = document.getElementById('scanner-section');
+        const fabScan = document.querySelector('.fab-scan');
+
+        function openScanner() {
+            homeSection.style.display = 'none';
+            scannerSection.style.display = 'block';
+            fabScan.style.display = 'none';
+            startCamera();
+        }
+
+        function closeScanner() {
+            scannerSection.style.display = 'none';
+            homeSection.style.display = 'block';
+            fabScan.style.display = 'flex';
+            stopCamera();
+        }
+
+        // --- Camera & AI Simulation Logic ---
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const photoPreview = document.getElementById('photo-preview');
+        const captureBtn = document.getElementById('capture-btn');
+        const retakeBtn = document.getElementById('retake-btn');
+        const scanOverlay = document.getElementById('scan-overlay');
+        const scanningText = document.getElementById('scanning-text');
+        const resultCard = document.getElementById('analysis-result');
+
+        let streamObj = null;
+
+        async function startCamera() {
+            try {
+                streamObj = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" } 
+                });
+                video.srcObject = streamObj;
+                // Reset UI
+                video.style.display = 'block';
+                photoPreview.style.display = 'none';
+                captureBtn.style.display = 'inline-block';
+                retakeBtn.style.display = 'none';
+                resultCard.style.display = 'none';
+            } catch (err) {
+                alert("تعذر الوصول للكاميرا. تأكد من الصلاحيات.");
+            }
+        }
+
+        function stopCamera() {
+            if(streamObj) {
+                streamObj.getTracks().forEach(track => track.stop());
+            }
+        }
+
+        captureBtn.addEventListener('click', () => {
+            // Capture frame
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            
+            // Show preview
+            const dataUrl = canvas.toDataURL('image/png');
+            photoPreview.src = dataUrl;
+            video.style.display = 'none';
+            photoPreview.style.display = 'block';
+            
+            // Start AI Simulation
+            captureBtn.style.display = 'none';
+            scanOverlay.style.display = 'block';
+            scanningText.style.display = 'block';
+
+            // Simulate Network Delay (2.5 seconds)
+            setTimeout(() => {
+                scanOverlay.style.display = 'none';
+                scanningText.style.display = 'none';
+                showRandomResult();
+                retakeBtn.style.display = 'inline-block';
+            }, 2500);
+        });
+
+        retakeBtn.addEventListener('click', () => {
+            photoPreview.style.display = 'none';
+            video.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+            retakeBtn.style.display = 'none';
+            resultCard.style.display = 'none';
+        });
+
+        // Mock Database for Results
+        const mockResults = [
+            { name: "كبسة دجاج", cal: 650, prot: 25, fat: 20, badge: "متوسطة", comment: "وجبة غنية بالكربوهيدرات. يفضل إضافة سلطة بجانبها." },
+            { name: "سمك مشوي", cal: 320, prot: 40, fat: 8, badge: "صحية جداً", comment: "مصدر ممتاز للأوميغا 3 والبروتين." },
+            { name: "برجر لحم", cal: 850, prot: 35, fat: 50, badge: "دسمة", comment: "تحتوي على دهون مشبعة عالية. حاول تقليل الحجم." },
+            { name: "سلطة خضراء", cal: 150, prot: 5, fat: 10, badge: "خفيفة", comment: "مثالية للعشاء، حاول إضافة دجاج أو بيض للبروتين." }
+        ];
+
+        function showRandomResult() {
+            const res = mockResults[Math.floor(Math.random() * mockResults.length)];
+            
+            document.getElementById('food-name').innerText = res.name;
+            document.getElementById('cal-val').innerText = res.cal;
+            document.getElementById('prot-val').innerText = res.prot + 'g';
+            document.getElementById('fat-val').innerText = res.fat + 'g';
+            document.getElementById('health-badge').innerText = res.badge;
+            document.getElementById('ai-comment').innerText = res.comment;
+            
+            // Color coding badge
+            const badge = document.getElementById('health-badge');
+            if(res.badge.includes("صحية")) badge.className = "badge bg-success";
+            else if(res.badge.includes("متوسطة")) badge.className = "badge bg-warning text-dark";
+            else badge.className = "badge bg-danger";
+
+            resultCard.style.display = 'block';
+            resultCard.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
